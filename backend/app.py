@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 from datetime import datetime
+from flask import send_from_directory
 import os
 
 app = Flask(__name__)
@@ -23,6 +24,22 @@ def init_lockers():
                 'isLocked': True,
                 'code': ''
             })
+
+
+# Trả về index.html khi vào "/"
+@app.route('/')
+def serve_index():
+    return send_from_directory('frontend', 'index.html')
+
+# Trả về history.html khi vào "/history"
+@app.route('/history')
+def serve_history():
+    return send_from_directory('frontend', 'history.html')
+
+# Cho phép tải static file như styles.css
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('frontend', filename)
 
 @app.route('/api/lockers', methods=['GET'])
 def get_lockers():
