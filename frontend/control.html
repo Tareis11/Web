@@ -3,54 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hệ thống tủ khóa</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Smart Lockers System</title>
   <style>
     body {
-      background: #1a1a1a;
+      margin: 0;
+      background-color: #0f172a;
       color: white;
       font-family: Arial, sans-serif;
     }
-    .school-title {
-      text-align: center;
-      margin-bottom: 2rem;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
     }
-    .school-title h1 {
-      font-size: 1.5rem;
+    .title {
+      font-size: 1.8rem;
+      color: #38bdf8;
       font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: #fff;
     }
-    .school-title h2 {
-      font-size: 1.25rem;
+    .history-button {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .temperature-box {
+      position: absolute;
+      left: 1rem;
+      top: 1rem;
+      background: #1e293b;
       color: #60a5fa;
-      margin-bottom: 0.5rem;
-    }
-    .school-title h3 {
+      padding: 1rem;
+      border-radius: 10px;
       font-size: 1.1rem;
-      color: #4ade80;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .lockers {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+    .locker {
+      background: #1e293b;
+      padding: 1.5rem;
+      border-radius: 12px;
+      width: 250px;
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .locker h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.3rem;
+    }
+    .status {
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .locked-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #dc2626;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+    }
+    .action-btn {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .open {
+      background: #22c55e;
+      color: white;
+    }
+    .close {
+      background: #ef4444;
+      color: white;
     }
   </style>
 </head>
-<body class="p-4">
-  <div class="container">
-    <div class="school-title">
-      <h1>TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TPHCM</h1>
-      <h2>KHÓA LUẬN TỐT NGHIỆP</h2>
-      <h3>DỰ ÁN TỦ ĐỒ THÔNG MINH DÙNG MÃ QR</h3>
-    </div>
-
-    <div class="header">
-      <h1>Hệ thống tủ khóa</h1>
-      <a href="history.html" class="text-blue-400 hover:underline">Xem lịch sử</a>
-    </div>
-
-    <h2 class="mt-4 text-yellow-400">Nhiệt độ: <span id="temperature">Đang tải...</span></h2>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" id="lockers">
-      <!-- Tủ sẽ được thêm ở đây -->
-    </div>
+<body>
+  <div class="temperature-box">
+    <span>📊</span> <span id="temperature">-- °C</span>
   </div>
+
+  <div class="header">
+    <div class="title">Smart Lockers System</div>
+    <a href="history.html" class="history-button">Xem lịch sử</a>
+  </div>
+
+  <div class="lockers" id="lockers"></div>
 
   <script>
     const API_URL = '/api';
@@ -70,37 +123,19 @@
     function showLockers(empty = false) {
       const container = document.getElementById('lockers');
       container.innerHTML = '';
-
-      const data = empty || lockers.length === 0
-        ? [1, 2, 3].map(n => ({ number: n, isLocked: true, fallback: true }))
-        : lockers;
+      const data = empty || lockers.length === 0 ? [1, 2, 3].map(n => ({ number: n, isLocked: true, fallback: true })) : lockers;
 
       data.forEach(locker => {
         const div = document.createElement('div');
-        div.className = 'bg-gray-800 p-4 rounded-lg';
+        div.className = 'locker';
         div.innerHTML = `
-          <div class="text-center mb-4">
-            <h2 class="text-xl font-bold">Tủ ${locker.number}</h2>
-            <p class="text-sm ${locker.isLocked ? 'text-red-400' : 'text-green-400'}">
-              ${locker.isLocked ? 'Đã khóa' : 'Đang mở'}
-            </p>
-          </div>
-          <div class="space-y-2">
-            <button onclick="toggleLocker(${locker.number})"
-              class="w-full py-2 rounded ${locker.isLocked ? 'bg-green-500' : 'bg-red-500'} hover:opacity-90"
-              ${locker.fallback ? 'disabled' : ''}>
-              ${locker.isLocked ? 'Mở khóa' : 'Khóa tủ'}
-            </button>
-            <div class="flex gap-2">
-              <input type="text" id="code-${locker.number}"
-                placeholder="Nhập mã khóa"
-                class="flex-1 px-2 py-1 rounded bg-gray-700" ${locker.fallback ? 'disabled' : ''}>
-              <button onclick="setCode(${locker.number})"
-                class="px-3 py-1 bg-blue-500 rounded hover:opacity-90" ${locker.fallback ? 'disabled' : ''}>
-                Đặt mã
-              </button>
-            </div>
-          </div>`;
+          ${locker.isLocked ? '<div class="locked-badge">Locked</div>' : ''}
+          <h2>Locker ${locker.number}</h2>
+          <p class="status">Status: ${locker.isLocked ? 'Locked' : 'Open'}</p>
+          <button class="action-btn ${locker.isLocked ? 'open' : 'close'}" onclick="toggleLocker(${locker.number})" ${locker.fallback ? 'disabled' : ''}>
+            ${locker.isLocked ? 'Open Locker' : 'Close Locker'}
+          </button>
+        `;
         container.appendChild(div);
       });
     }
@@ -117,21 +152,6 @@
         getLockers();
       } catch {
         alert('Lỗi khi thao tác với tủ');
-      }
-    }
-
-    async function setCode(number) {
-      try {
-        const code = document.getElementById(`code-${number}`).value.trim();
-        if (!code) return alert('Vui lòng nhập mã khóa');
-        await fetch(`${API_URL}/lockers/set-code`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ number, code })
-        });
-        getLockers();
-      } catch {
-        alert('Lỗi khi đặt mã');
       }
     }
 
