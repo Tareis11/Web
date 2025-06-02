@@ -7,6 +7,8 @@ import os
 
 app = Flask(__name__)
 CORS(app)
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_FOLDER = os.path.join(APP_ROOT, '..', 'frontend')
 
 # Kết nối MongoDB từ biến môi trường
 MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
@@ -29,17 +31,16 @@ def init_lockers():
 # Trả về index.html khi vào "/"
 @app.route('/')
 def serve_index():
-    return send_from_directory('frontend', 'index.html')
+    return send_from_directory(FRONTEND_FOLDER, 'index.html')
 
-# Trả về history.html khi vào "/history"
 @app.route('/history')
 def serve_history():
-    return send_from_directory('frontend', 'history.html')
+    return send_from_directory(FRONTEND_FOLDER, 'history.html')
 
-# Cho phép tải static file như styles.css
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('frontend', filename)
+    return send_from_directory(FRONTEND_FOLDER, filename)
+
 
 @app.route('/api/lockers', methods=['GET'])
 def get_lockers():
