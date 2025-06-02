@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hệ thống tủ khóa</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      background: #1a1a1a;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .school-title {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .school-title h1 {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    .school-title h2 {
+      font-size: 1.25rem;
+      color: #60a5fa;
+      margin-bottom: 0.5rem;
+    }
+    .school-title h3 {
+      font-size: 1.1rem;
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container">
+    <div class="school-title">
+      <h1>TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TPHCM</h1>
+      <h2>KHÓA LUẬN TỐT NGHIỆP</h2>
+      <h3>DỰ ÁN TỦ ĐỒ THÔNG MINH DÙNG MÃ QR</h3>
+    </div>
+
+    <div class="header">
+      <h1>Hệ thống tủ khóa</h1>
+      <a href="history.html" class="text-blue-400 hover:underline">Xem lịch sử</a>
+    </div>
+
+    <h2 class="mt-4 text-yellow-400">Nhiệt độ: <span id="temperature">Đang tải...</span></h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" id="lockers">
+      <!-- Tủ sẽ được thêm ở đây -->
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let lockers = [];
+
+    async function getLockers() {
+      try {
+        const response = await fetch(`${API_URL}/lockers`);
+        const data = await response.json();
+        lockers = data.lockers;
+        showLockers();
+      } catch {
+        showLockers(true);
+      }
+    }
+
+    function showLockers(empty = false) {
+      const container = document.getElementById('lockers');
+      container.innerHTML = '';
+
+      const data = empty || lockers.length === 0
+        ? [1, 2, 3].map(n => ({ number: n, isLocked: true, fallback: true }))
+        : lockers;
+
+      data.forEach(locker => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-800 p-4 rounded-lg';
+        div.innerHTML = `
+          <div class="text-center mb-4">
+            <h2 class="text-xl font-bold">Tủ ${locker.number}</h2>
+            <p class="text-sm ${locker.isLocked ? 'text-red-400' : 'text-green-400'}">
+              ${locker.isLocked ? 'Đã khóa' : 'Đang mở'}
+            </p>
+          </div>
+          <div class="space-y-2">
+            <button onclick="toggleLocker(${locker.number})"
+              class="w-full py-2 rounded ${locker.isLocked ? 'bg-green-500' : 'bg-red-500'} hover:opacity-90"
+              ${locker.fallback ? 'disabled' : ''}>
+              ${locker.isLocked ? 'Mở khóa' : 'Khóa tủ'}
+            </button>
+            <div class="flex gap-2">
+              <input type="text" id="code-${locker.number}"
+                placeholder="Nhập mã khóa"
+                class="flex-1 px-2 py-1 rounded bg-gray-700" ${locker.fallback ? 'disabled' : ''}>
+              <button onclick="setCode(${locker.number})"
+                class="px-3 py-1 bg-blue-500 rounded hover:opacity-90" ${locker.fallback ? 'disabled' : ''}>
+                Đặt mã
+              </button>
+            </div>
+          </div>`;
+        container.appendChild(div);
+      });
+    }
+
+    async function toggleLocker(number) {
+      try {
+        const locker = lockers.find(l => l.number === number);
+        const action = locker.isLocked ? 'unlock' : 'lock';
+        await fetch(`${API_URL}/lockers/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ number, action })
+        });
+        getLockers();
+      } catch {
+        alert('Lỗi khi thao tác với tủ');
+      }
+    }
+
+    async function setCode(number) {
+      try {
+        const code = document.getElementById(`code-${number}`).value.trim();
+        if (!code) return alert('Vui lòng nhập mã khóa');
+        await fetch(`${API_URL}/lockers/set-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ number, code })
+        });
+        getLockers();
+      } catch {
+        alert('Lỗi khi đặt mã');
+      }
+    }
+
+    async function getTemperature() {
+      try {
+        const res = await fetch(`${API_URL}/lockers/temperature`);
+        const data = await res.json();
+        document.getElementById('temperature').textContent = `${data.temperature} °C`;
+      } catch {
+        document.getElementById('temperature').textContent = '25 °C';
+      }
+    }
+
+    getLockers();
+    getTemperature();
+    setInterval(getLockers, 5000);
+    setInterval(getTemperature, 10000);
+  </script>
+</body>
+</html>
