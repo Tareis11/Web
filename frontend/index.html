@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống tủ khóa</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .school-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .school-title h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+        .school-title h2 {
+            font-size: 1.25rem;
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+        }
+        .school-title h3 {
+            font-size: 1.1rem;
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <!-- Tiêu đề trường và dự án -->
+        <div class="school-title">
+            <h1>TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TPHCM</h1>
+            <h2>KHÓA LUẬN TỐT NGHIỆP</h2>
+            <h3>DỰ ÁN TỦ ĐỒ THÔNG MINH DÙNG MÃ QR</h3>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>Hệ thống tủ khóa</h1>
+            <a href="history.html" class="text-blue-400 hover:underline">Xem lịch sử</a>
+        </div>
+
+        <!-- Danh sách tủ -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="lockers">
+            <!-- Tủ sẽ được thêm vào đây -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let lockers = [];
+
+        // Lấy danh sách tủ
+        async function getLockers() {
+            try {
+                const response = await fetch(`${API_URL}/lockers`);
+                const data = await response.json();
+                lockers = data.lockers;
+                showLockers();
+            } catch (error) {
+                alert('Lỗi khi tải danh sách tủ');
+            }
+        }
+
+        // Hiển thị danh sách tủ
+        function showLockers() {
+            const container = document.getElementById('lockers');
+            container.innerHTML = '';
+
+            lockers.forEach(locker => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-800 p-4 rounded-lg';
+                div.innerHTML = `
+                    <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold">Tủ ${locker.number}</h2>
+                        <p class="text-sm ${locker.isLocked ? 'text-red-400' : 'text-green-400'}">
+                            ${locker.isLocked ? 'Đã khóa' : 'Đang mở'}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button onclick="toggleLocker(${locker.number})"
+                            class="w-full py-2 rounded ${locker.isLocked ? 'bg-green-500' : 'bg-red-500'} hover:opacity-90">
+                            ${locker.isLocked ? 'Mở khóa' : 'Khóa tủ'}
+                        </button>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="code-${locker.number}" 
+                                placeholder="Nhập mã khóa" 
+                                class="flex-1 px-2 py-1 rounded bg-gray-700">
+                            <button onclick="setCode(${locker.number})"
+                                class="px-3 py-1 bg-blue-500 rounded hover:opacity-90">
+                                Đặt mã
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Mở/khóa tủ
+        async function toggleLocker(number) {
+            try {
+                const locker = lockers.find(l => l.number === number);
+                const action = locker.isLocked ? 'unlock' : 'lock';
+
+                const response = await fetch(`${API_URL}/lockers/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, action })
+                });
+
+                if (response.ok) {
+                    await getLockers();
+                } else {
+                    alert('Lỗi khi thao tác với tủ');
+                }
+            } catch (error) {
+                alert('Lỗi khi thao tác với tủ');
+            }
+        }
+
+        // Đặt mã khóa
+        async function setCode(number) {
+            try {
+                const codeInput = document.getElementById(`code-${number}`);
+                const code = codeInput.value.trim();
+
+                if (!code) {
+                    alert('Vui lòng nhập mã khóa');
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/lockers/set-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, code })
+                });
+
+                if (response.ok) {
+                    codeInput.value = '';
+                    await getLockers();
+                    alert('Đã đặt mã khóa');
+                } else {
+                    alert('Lỗi khi đặt mã khóa');
+                }
+            } catch (error) {
+                alert('Lỗi khi đặt mã khóa');
+            }
+        }
+
+        // Tự động cập nhật danh sách tủ mỗi 5 giây
+        getLockers();
+        setInterval(getLockers, 5000);
+    </script>
+</body>
+</html> 

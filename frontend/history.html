@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử hoạt động - Hệ thống tủ khóa</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Lịch sử hoạt động</h1>
+            <a href="index.html">Trở về trang chủ</a>
+        </div>
+
+        <!-- Bảng lịch sử -->
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Tủ</th>
+                    <th>Hành động</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <!-- Lịch sử sẽ được thêm vào đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Lấy lịch sử
+        async function getHistory() {
+            try {
+                const response = await fetch(`${API_URL}/lockers/history`);
+                const data = await response.json();
+                showHistory(data.history);
+            } catch (error) {
+                alert('Lỗi khi tải lịch sử');
+            }
+        }
+
+        // Hiển thị lịch sử
+        function showHistory(history) {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+
+            history.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <span class="badge badge-locker">
+                            Tủ ${item.lockerNumber}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${item.action === 'unlock' ? 'badge-unlock' : 'badge-lock'}">
+                            ${item.action === 'unlock' ? 'Mở khóa' : 'Khóa tủ'}
+                        </span>
+                    </td>
+                    <td>${item.time}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Tự động cập nhật lịch sử mỗi 5 giây
+        getHistory();
+        setInterval(getHistory, 5000);
+    </script>
+</body>
+</html> 
